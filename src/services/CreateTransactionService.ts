@@ -1,7 +1,6 @@
-// import AppError from '../errors/AppError';
-
 import { getCustomRepository, getRepository } from 'typeorm';
 import { response } from 'express';
+import AppError from '../errors/AppError';
 import TransactionRepository from '../repositories/TransactionsRepository';
 
 import Transaction from '../models/Transaction';
@@ -23,6 +22,14 @@ class CreateTransactionService {
   }: CreateTransactionInterface): Promise<Transaction> {
     const transactionRepository = getCustomRepository(TransactionRepository);
     const categoryRepository = getRepository(Category);
+
+    const { total } = await transactionRepository.getBalance();
+
+    if (type === 'outcome' && total < value) {
+      throw new AppError(
+        "You don't have enougth balance for this transaction.",
+      );
+    }
 
     let transactionCategory = await categoryRepository.findOne({
       where: { title: category },
